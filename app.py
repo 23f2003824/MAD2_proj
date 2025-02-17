@@ -2,8 +2,7 @@ from flask import Flask
 from backend.config import LocalDevelopmentConfig
 from backend.models import db, User, Role
 from flask_security import Security, SQLAlchemyUserDatastore, auth_required
-from backend.resources import api
-
+from flask_caching import Cache
 
 def create_app():
 
@@ -14,13 +13,21 @@ def create_app():
     # model init
     db.init_app(app)
 
-    # flask_restful init
-    api.init_app(app)
+
+    # cache init
+    cache= Cache(app)
+
+
     
     datastore=SQLAlchemyUserDatastore(db, User, Role)
+    app.cache= cache
+
     app.security = Security(app, datastore=datastore, register_blueprint= False)
     app.app_context().push()
-
+    from backend.resources import api
+    
+    # flask_restful init
+    api.init_app(app)
 
     return app
 

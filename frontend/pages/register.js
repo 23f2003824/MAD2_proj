@@ -1,6 +1,8 @@
 export default {
     template: `
           <div>
+          <router-link to="/">Home</router-link>
+          <br>
               <input placeholder="email" v-model="email" />
               <input type="password" placeholder="password" v-model="password" />
               <input placeholder="role" v-model="role" />

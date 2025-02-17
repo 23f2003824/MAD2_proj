@@ -1,0 +1,15 @@
+body{
+    background-image: url(/static/images/small\ business\ website\ \ \(1\).webp);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-size: 110%;
+}
+
+.main{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+}
+

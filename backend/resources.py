@@ -1,7 +1,10 @@
-from flask import request
+from flask import request, current_app as app
 from flask_restful import Resource, Api,fields, marshal_with, marshal
-from backend.models import Service, db
+from backend.models import Service,User, db
 from flask_security import auth_required, current_user
+
+cache= app.cache
+
 api= Api(prefix= '/api')
 
 service_fields={
@@ -63,3 +66,18 @@ class ServiceListAPI(Resource):
             return {'message': 'you are not authorized to create a service'}, 403
 api.add_resource(ServiceAPI, '/services/<int:service_id>')
 api.add_resource( ServiceListAPI, '/services')
+
+user_fields={
+    'id': fields.Integer,
+    'username': fields.String,
+    'email': fields.String,
+}
+
+class UserAPI(Resource):
+    
+    @marshal_with(user_fields)
+    @auth_required('token')
+    def get(self):
+        services= User.query.all()
+        return services, 200
+api.add_resource( UserAPI, '/user')

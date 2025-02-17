@@ -1,12 +1,23 @@
 from flask import current_app as app, jsonify, render_template, request
 from flask_security import auth_required, verify_password, hash_password
 from backend.models import db
+from datetime import datetime
+
 
 datastore= app.security.datastore
+cache= app.cache
 
 @app.get('/')
 def home():
     return render_template('index.html')
+
+# checking cache
+
+@app.route('/cache')
+@cache.cached(timeout=5)
+def cache():
+    return {"time": str(datetime.now())}
+
 
 @app.route('/protected')
 @auth_required('token')
@@ -42,7 +53,7 @@ def register():
     username = data.get('username')
     role = data.get('role')
 
-    if not email or not password or role not in ['admin', 'user']:
+    if not email or not password or role not in ['admin', 'user', 'service_professional']:
         return jsonify({'message': 'email, password and username are required'}), 400
     
     user= datastore.find_user(email= email)

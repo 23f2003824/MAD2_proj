@@ -1,6 +1,8 @@
 export default {
   template: `
         <div>
+            <router-link to="/">Home</router-link>
+            <br>
             <input placeholder="email" v-model="email" />
             <input type="password" placeholder="password" v-model="password" />
             <button @click="submitLogin">Login</button>
@@ -24,9 +26,13 @@ export default {
         const data = await res.json();
         console.log(data);
         localStorage.setItem('user', JSON.stringify(data));
-
-        this.$store.commit('setUser');
-        this.$router.push('/services');
+        console.log(data.role);
+        
+        if (data.role =='admin') {
+          this.$store.commit('setUser');
+          this.$router.push('/admin');
+        }
+        // this.$router.push('/services');
       
       }
     },

@@ -1,6 +1,7 @@
-import Navbar from "./components/Navbar.js"
+// import Navbar from "./components/Navbar.js"
 import router from "./utils/router.js"
 import store from "./utils/store.js"
+import frontPage from "./pages/frontPage.js"
 
 
 const app= new Vue({
@@ -8,12 +9,11 @@ const app= new Vue({
     
     template:`
         <div> 
-            <Navbar />
             <router-view> </router-view>
         </div>`,
 
     components: {
-        Navbar,
+        frontPage,
     },
     router,
     store,

@@ -15,5 +15,7 @@ with app.app_context():
         user_datastore.create_user(username='admin', email='admin@study.iitm.ac.in', password=hash_password('pass'), roles=['admin'])   
     if ( not user_datastore.find_user(email='user01@study.iitm.ac.in')):
         user_datastore.create_user(username='user01', email='user01@study.iitm.ac.in', password=hash_password('pass'), roles=['user'])   
+    if ( not user_datastore.find_user(email='prof01@study.iitm.ac.in')):
+        user_datastore.create_user(username='prof01', email='prof01@study.iitm.ac.in', password=hash_password('pass'), roles=['service_professional'])   
 
     db.session.commit()
