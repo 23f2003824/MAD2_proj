@@ -19,7 +19,7 @@ export default {
                         <p style="margin: 0">Email: {{ user.email }}</p>
                     </div>
                 </div>
-        </div>
+            </div>
     </div>
 `,
 
