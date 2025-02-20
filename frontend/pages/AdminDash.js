@@ -7,7 +7,6 @@ export default{
     template:`
         <div>
             <Navbar />
-            <h1> this is admin dash </h1>
             <ServicePage />
             <UserPage />
         </div>

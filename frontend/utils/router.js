@@ -6,12 +6,13 @@ import ServiceDisplayPage from '../pages/ServiceDisplayPage.js';
 import AdminDash from '../pages/AdminDash.js';
 import frontPage from '../pages/frontPage.js';
 import store from './store.js';
+import ServiceCreation from '../pages/ServiceCreation.js';
 const routes= [
     {path: '/', component: frontPage},
     {path: '/login', component: login},
     {path: '/register', component: register},
-    {path: '/services', component: ServicePage, meta: {requiresLogin: true}},
-    {path: '/services/:id', component: ServiceDisplayPage, props:true, meta: {requiresLogin: true}},
+    {path: '/services', component: ServiceCreation, meta: {requiresLogin: true, role:"admin" }},
+    {path: '/services/:id', component: ServiceCreation, props:true, meta: {requiresLogin: true, role:"admin" }},
     {path: '/admin', component: AdminDash, props:true, meta: {requiresLogin: true, role:"admin"}},
 
 ]

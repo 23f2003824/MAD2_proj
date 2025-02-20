@@ -1,13 +1,27 @@
 export default {
     template: `
-        <div>
-            <router-link v-if="$store.state.loggedIn && $store.state.role=='admin'" to="/admin">Admin Dashboard</router-link>
-            <button @click="logout" v-if="$store.state.loggedIn">Logout</button>   
-            <button>Search</button>     
-            <button>Summary</button>   
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <router-link class="nav-link active" aria-current="page" v-if="$store.state.loggedIn && $store.state.role=='admin'" to="/admin">Admin Dashboard</router-link>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Search</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Summary</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" @click="logout" v-if="$store.state.loggedIn">Logout</a>
+                    </li>
+                    </ul>
+                </div>
+            </div>
+      </nav>   
             
         
-        </div>
         `,
         methods: {
             logout() {
