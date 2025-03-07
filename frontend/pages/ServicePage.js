@@ -39,8 +39,8 @@ export default {
                 </div>
             </div>
             <p v-else class="text-center text-muted">No services available at the moment.</p>
-            <button @click="$router.push('/services')" style="margin-top: 20px;" class="btn btn-outline-success">New service +</button>
-            <button @click="getCsv" style="margin-top: 20px;" class="btn btn-outline-info">Get Services Data
+            <button v-if="$store.state.role=='admin'" @click="$router.push('/services')" style="margin-top: 20px;" class="btn btn-outline-success">New service +</button>
+            <button v-if="$store.state.role=='admin'" @click="getCsv" style="margin-top: 20px;" class="btn btn-outline-info">Get Services Data
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 8px;">
                     <title>Download</title>
                     <path d="M8 17V15H16V17H8M16 10L12 14L8 10H10.5V7H13.5V10H16M5 3H19C20.11 3 21 3.9 21 5V19C21 20.11 20.11 21 19 21H5C3.9 21 3 20.11 3 19V5C3 3.9 3.9 3 5 3M5 5V19H19V5H5Z" />
@@ -104,7 +104,16 @@ export default {
         });
         if (csv.ok) {
           console.log("CSV downloaded successfully.");
-          window.open(`${location.origin}/getCsv/${task_id}`);
+          // window.open(`${location.origin}/getCsv/${task_id}`);
+          const blob = await csv.blob(); // Create a blob URL for the downloaded file
+          const url = URL.createObjectURL(blob); // create a temporary link URL
+
+          const a = document.createElement("a"); // Create a link element to trigger the download
+          a.href = url; // Set the link URL to the blob URL
+          a.download = `services_data_${task_id}.csv`; // Set the file name
+          document.body.appendChild(a); 
+          a.click(); // Trigger download
+          document.body.removeChild(a);
           clearInterval(interval);
         }
       }, 100);

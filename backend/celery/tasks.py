@@ -1,8 +1,9 @@
 from celery import shared_task
+from backend.celery.mailService import send_email
 from backend.models import db, Service
 import flask_excel
 
-
+#need to re run celery worker if any changes are made to this file
 @shared_task(ignore_result=False) #by default it is also false, we want it to be true
 def add(x, y):
     return x + y
@@ -22,3 +23,7 @@ def db_to_csv(self):
         file.write(csv_out.data)
 
     return filename # return filename for the downloaded file to be used in routes.py to serve the file to the user.
+
+@shared_task(ignore_result=False)
+def email_notification(to, subject, content):
+    send_email(to, subject, content) # sending email using mailService.py

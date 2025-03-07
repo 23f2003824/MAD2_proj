@@ -65,7 +65,6 @@ class ServiceAPI(Resource):
 
 class ServiceListAPI(Resource):
     
-    @auth_required('token')
     @cache.cached(timeout=5)
     @marshal_with(service_fields)
     def get(self):
@@ -106,14 +105,16 @@ user_fields={
 # USER API
 class UserAPI(Resource):
     
-    @auth_required('token')
+    # @auth_required('token')
     @cache.cached(timeout=5)
     @marshal_with(user_fields)
     def get(self):
-        # Query for users who have the 'user' role directly
-        users_with_user_role = User.query.filter(User.roles.any(Role.name == 'user')).all()
-
-        return users_with_user_role, 200
+        try:
+            # Query for users who have the 'user' role directly
+            users_with_user_role = User.query.filter(User.roles.any(Role.name == 'user')).all()
+            return users_with_user_role, 200
+        except Exception as e:
+            return {'message': str(e)}, 500
 
 api.add_resource( UserAPI, '/users')
 
@@ -125,19 +126,23 @@ professional_fields={
     'username': fields.String,
     'email': fields.String,
     'roles': fields.List(fields.String),
-    'active': fields.Boolean
+    'active': fields.Boolean,
+    'accepted':fields.Boolean,
+    'rejected':fields.Boolean,
 }
 
 class professionalAPI(Resource):
     
-    @auth_required('token')
+    # @auth_required('token')
     @cache.cached(timeout=5)
     @marshal_with(professional_fields)
     def get(self):
-        # Query for users who have the 'user' role directly
-        users_with_professional_role = User.query.filter(User.roles.any(Role.name == 'service_professional')).all()
-
-        return users_with_professional_role, 200
+        try:
+            # Query for users who have the 'service_professional' role directly
+            users_with_professional_role = User.query.filter(User.roles.any(Role.name == 'service_professional')).all()
+            return users_with_professional_role, 200
+        except Exception as e:
+            return {'message': str(e)}, 500
 
 api.add_resource( professionalAPI, '/professionals')
 
@@ -154,11 +159,54 @@ class ToggleActiveStatusAPI(Resource):
         user = User.query.get(user_id)
         if not user:
             return {"message": "User not found"}, 404
+        if current_user.roles[0].name == "admin":
 
-        user.active = data.get('active')
-        db.session.commit()
-
+            user.active = data.get('active')
+            db.session.commit()
+        else:
+            return {"message": "You are not authorized to update the user"}, 403
         return {"message": "User status updated", "active": user.active}, 200
-
-# Add the route to the API
+    
 api.add_resource(ToggleActiveStatusAPI, '/toggle-status/<int:user_id>')
+
+class AcceptProfileAPI(Resource):
+    @auth_required('token')
+
+    def post(self, user_id):
+        data = request.get_json()
+
+        if not data or 'accepted' not in data:
+            return {"message": "Invalid request, 'accepted' field is required"}, 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return {"message": "User not found"}, 404
+        if current_user.roles[0].name == "admin":
+
+            user.accepted = data.get('accepted')
+            db.session.commit()
+        else:
+            return {"message": "You are not authorized to update the user"}, 403
+
+        return {"message": "User status updated", "accepted": user.accepted}, 200
+api.add_resource(AcceptProfileAPI, '/acceptProf/<int:user_id>')
+
+class RejectProfileAPI(Resource):
+    @auth_required('token')
+
+    def post(self, user_id):
+        data = request.get_json()
+
+        if not data or 'rejected' not in data:
+            return {"message": "Invalid request, 'accepted' field is required"}, 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return {"message": "User not found"}, 404
+        if current_user.roles[0].name == "admin":
+
+            user.rejected = data.get('rejected')
+            db.session.commit()
+        else:
+            return {"message": "You are not authorized to update the user"}, 403
+

@@ -6,15 +6,17 @@ export default {
                     <ul class="navbar-nav">
                     <li class="nav-item">
                         <router-link class="nav-link active" aria-current="page" v-if="$store.state.loggedIn && $store.state.role=='admin'" to="/admin">Admin Dashboard</router-link>
+                        <router-link class="nav-link active" aria-current="page" v-if="$store.state.loggedIn && $store.state.role=='user'" to="/user">User Dashboard</router-link>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Search</a>
+                        <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='admin'" to="/admin/search">Search</router-link>
+                        <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='user'" to="/user/search">Search</router-link>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">Summary</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" @click="logout" v-if="$store.state.loggedIn">Logout</a>
+                        <router-link class="nav-link" to="#" @click.native="logout" v-if="$store.state.loggedIn">Logout</router-link>
                     </li>
                     </ul>
                 </div>

@@ -1,12 +1,21 @@
 export default {
   template: `
-        <div>
-            <router-link to="/">Home</router-link>
-            <br>
-            <input placeholder="email" v-model="email" />
-            <input type="password" placeholder="password" v-model="password" />
-            <button @click="submitLogin">Login</button>
-        </div>
+  
+  <div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-lg w-100" style="max-width: 400px;">
+      <router-link to="/" class="text-primary text-decoration-none mb-3 d-block">Home</router-link>
+      <h2 class="text-center mb-4">Login</h2>
+
+      <div class="mb-3">
+        <input type="email" class="form-control" placeholder="Email" v-model="email" required />
+      </div>
+      <div class="mb-3">
+        <input type="password" class="form-control" placeholder="Password" v-model="password" required />
+      </div>
+
+      <button class="btn btn-primary w-100" @click="submitLogin">Login</button>
+    </div>
+  </div>
         `,
   data() {
     return {
@@ -31,6 +40,10 @@ export default {
         if (data.role =='admin') {
           this.$store.commit('setUser');
           this.$router.push('/admin');
+        }
+        else if (data.role =='user') {
+          this.$store.commit('setUser');
+          this.$router.push('/user');
         }
         // this.$router.push('/services');
       

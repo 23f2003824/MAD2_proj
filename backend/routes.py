@@ -41,7 +41,7 @@ def download_service_csv():
 
 
 @app.get('/getCsv/<id>')
-# @auth_required('token')
+@auth_required('token')
 def download_csv(id):
     result = AsyncResult(id)
     file_path = os.path.abspath(f'./backend/celery/user_downloads/{result.result}')
@@ -92,6 +92,10 @@ def register():
     password = data.get('password')
     username = data.get('username')
     role = data.get('role')
+    name= data.get('name')
+    description= data.get('description')
+    service_type= data.get('service_type')
+    experience= data.get('experience')
 
     if not email or not password or role not in ['admin', 'user', 'service_professional']:
         return jsonify({'message': 'email, password and username are required'}), 400
@@ -101,7 +105,7 @@ def register():
         return jsonify({'message': 'user already exists'}), 400
     
     try:
-        user= datastore.create_user(email= email, password= hash_password(password), username = username, roles=[role], active= True)
+        user= datastore.create_user(email= email, password= hash_password(password), username = username, roles=[role], active= True, name=name,description=description,service_type=service_type,experience=experience)
         db.session.commit()
         return jsonify({'message': 'user created successfully', 'id': user.id}), 201
     except:

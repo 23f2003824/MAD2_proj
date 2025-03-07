@@ -7,7 +7,7 @@ db= SQLAlchemy()
 class User(db.Model, UserMixin):
     # UserMixin provides default implementations for the methods and properties required by the Flask-Security extension
     id= db.Column(db.Integer, primary_key= True)
-    username= db.Column(db.String, unique= True)
+    username= db.Column(db.String, unique= True, nullable= False)
     email= db.Column(db.String, unique= True, nullable= False)
     password= db.Column(db.String, nullable= False)
 
@@ -16,13 +16,14 @@ class User(db.Model, UserMixin):
     active= db.Column(db.Boolean, default= True)
     # Role.bearers will give the users with that role
     roles = db.relationship('Role', backref='bearers', secondary= 'user_roles')
-
-    # #attributes for service professional
-    # name= db.Column(db.String, nullable= True)
-    # date_created= db.Column(db.DateTime, default= datetime.now())
-    # description= db.Column(db.String, nullable= True)
-    # service_type= db.Column(db.String, nullable= True)
-    # experience= db.Column(db.Integer, nullable= True)
+    accepted= db.Column(db.Boolean, default=False)
+    rejected= db.Column(db.Boolean, default=False)
+    #attributes for service professional
+    name= db.Column(db.String, nullable= True)
+    date_created= db.Column(db.DateTime, default= datetime.now())
+    description= db.Column(db.String, nullable= True)
+    service_type= db.Column(db.String, nullable= True)
+    experience= db.Column(db.Integer, nullable= True)
 
 
 

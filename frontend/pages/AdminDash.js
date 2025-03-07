@@ -7,8 +7,11 @@ export default{
     template:`
         <div>
             <Navbar />
-            <ServicePage />
-            <UserPage />
+            <div v-if="$route.path === '/admin'">
+                <ServicePage />
+                <UserPage />
+            </div>
+            <router-view></router-view>
         </div>
     `,
     components: {

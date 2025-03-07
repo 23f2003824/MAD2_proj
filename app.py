@@ -36,7 +36,7 @@ def create_app():
 
 app= create_app()
 celery_app= celery_init_app(app)
-
+import backend.celery.celery_schedule
 import backend.create_init_data
 import backend.routes
 
