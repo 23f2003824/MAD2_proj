@@ -8,18 +8,28 @@
 
 
 export default {
-  // props: ['name', 'price', 'description', 'id'],
   template: `
-  <div>
-      <router-link to="/admin">Admin Dashboard</router-link>
-      <br>
-      <input placeholder="Service Name" v-model="service_name" />
-      <input type="number" placeholder="Price" v-model="price" />
-      <input type="number" placeholder="Duration(in mins)" v-model="duration" />
-      <input type="textarea" placeholder="Description of the service" v-model="description" />
-      <button @click="createService">Create</button>
+  <div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card p-4 shadow-lg w-100" style="max-width: 500px;">
+      <h2 class="text-center mb-4 text-primary fw-bold">Create a New Service</h2>
+      
+      <div class="mb-3">
+        <input type="text" class="form-control" placeholder="Service Name" v-model="service_name" />
+      </div>
+      <div class="mb-3">
+        <input type="number" class="form-control" placeholder="Price" v-model="price" />
+      </div>
+      <div class="mb-3">
+        <input type="number" class="form-control" placeholder="Duration (in mins)" v-model="duration" />
+      </div>
+      <div class="mb-4">
+        <textarea class="form-control" placeholder="Description of the service" rows="3" v-model="description"></textarea>
+      </div>
+      
+      <button class="btn btn-primary w-100 shadow-sm" @click="createService">Create Service</button>
+    </div>
   </div>
-  `,
+`,
   data() {
       return {
         service_name: null,

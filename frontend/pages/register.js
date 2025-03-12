@@ -1,19 +1,30 @@
 export default {
     template: `
     
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-      <div class="card p-4 shadow-lg w-100" style="max-width: 400px;">
-        <router-link to="/" class="text-primary text-decoration-none mb-3 d-block">Home</router-link>
+    <div class="container d-flex justify-content-center align-items-center vh-100"
+        style="
+        background-image: url('/static/static/images/logo.png');
+        background-size: cover;
+        background-position: center;">
+      <div 
+        class="p-4 shadow-lg w-100 rounded-4 text-dark " 
+        style="
+        max-width: 400px;
+        background: linear-gradient(to bottom right, #e3f2fd,rgba(187, 222, 251, 0.6));">
+        <router-link to="/" class="text-primary text-decoration-none fw-bold d-inline-block mb-3">Home</router-link>
         <h2 class="text-center mb-4">Register</h2>
 
         <div class="mb-3">
           <input class="form-control" placeholder="Username" v-model="username" required />
         </div>
         <div class="mb-3">
-          <input class="form-control" placeholder="Email" v-model="email" required />
+          <input class="form-control" type="email"placeholder="Email" v-model="email" required />
         </div>
         <div class="mb-3">
           <input type="password" class="form-control" placeholder="Password" v-model="password" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" class="form-control" placeholder="Confirm Password" v-model="confirmPassword" required />
         </div>
         <div class="mb-3">
           <input class="form-control" placeholder="Name" v-model="name" required />
@@ -42,6 +53,14 @@ export default {
         </div>
 
         <button class="btn btn-primary w-100" @click="submitLogin">Register</button>
+        <p class="text-center mt-3">
+        Already Registered? 
+        <router-link 
+          v-if="!$store.state.loggedIn" 
+          to="/login" 
+          class="text-success text-decoration-none fw-bold ms-1">
+          Login Here
+        </router-link>
       </div>
     </div>
           `,
@@ -56,6 +75,7 @@ export default {
         service_type: "",
         experience: null,
         services: [],
+        confirmPassword: null,
       };
     },
     async mounted() {
@@ -71,6 +91,16 @@ export default {
       async submitLogin() {
         if (!this.username || !this.email || !this.password || !this.role) {
           alert("Username, Email, Password and Role must be provided");
+          return;
+        }
+        if (this.role === "service_professional") {
+          if (!this.description || !this.service_type || !this.experience) {
+              alert("For Service Professionals, Description, Service Type, and Experience are required!");
+              return;
+          }
+        }
+        if(this.password!==this.confirmPassword){
+          alert("Passwords do not match!");
           return;
         }
         const res = await fetch((location.origin+"/register"), {

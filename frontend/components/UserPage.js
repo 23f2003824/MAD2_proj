@@ -13,7 +13,7 @@ export default {
                         :data-bs-target="'#collapse00' + professional.id" 
                         aria-expanded="true" 
                         :aria-controls="'collapse00' + professional.id">
-                        Professional {{ professional.id }}
+                        Professional {{ professional.name }}
                     </button>
                 </h2>
                 <div :id="'collapse00' + professional.id" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
@@ -21,7 +21,9 @@ export default {
                         <h2 class="display-6">Name: {{ professional.username }}</h2>
                         <p>Email: {{ professional.email }}</p>
                         <hr>
-                        <p>Description:</p>
+                        <p>Description: {{ professional.description}}</p>
+                        <p>Experience: {{ professional.experience}} Years</p>
+                        <p>Service offered: {{ professional.service_type}}</p>
                         <div class="d-flex gap-2 mt-3">
                             <!-- Accept Button -->
                             <button v-if="!professional.rejected"
@@ -54,16 +56,25 @@ export default {
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                         :data-bs-target="'#collapse0' + professional.id" 
                         aria-expanded="true" 
-                        :aria-controls="'collapse0' + professional.id">
-                        Professional {{ professional.id }}
+                        :aria-controls="'collapse0' + professional.id"
+                        :style="{
+                            backgroundColor: professional.active ? '' : '#f8d7da',
+                            color: professional.active ? '' : '#721c24',
+                            border: professional.active ? '' : '1px solid #f5c6cb'
+                        }">
+                        Professional: {{ professional.username }} <span v-if="!professional.active">(Blocked)</span>
                     </button>
                 </h2>
                 <div :id="'collapse0' + professional.id" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                     <div class="accordion-body">
-                        <h2 class="display-6">Name: {{ professional.username }}</h2>
+                        <h2 class="display-6">Name: {{ professional.name }}</h2>
                         <p>Email: {{ professional.email }}</p>
                         <hr>
-                        <p>Description:</p>
+
+                        <p>Description: {{ professional.description}}</p>
+                        <p>Experience: {{ professional.experience}} Years</p>
+                        <p>Service offered: {{ professional.service_type}}</p>
+                        <p>Professional rating: {{ professional.rating}}</p>
                         <div class="d-flex gap-2 mt-3">
                             <button 
                             class="btn" 

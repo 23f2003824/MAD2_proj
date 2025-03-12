@@ -8,20 +8,24 @@ import frontPage from '../pages/frontPage.js';
 import store from './store.js';
 import ServiceCreation from '../pages/ServiceCreation.js';
 import ServiceUpdate from '../pages/ServiceUpdate.js';
-import Search from '../pages/SearchPage.js';
+import Search from '../components/SearchPage.js';
 import UserDash from '../pages/UserDash.js';
+import UserUpdate from '../pages/UserUpdate.js';
+import ProfessionalDash from '../pages/ProfessionalDash.js';
 const routes= [
     {path: '/', component: frontPage},
     {path: '/login', component: login},
     {path: '/register', component: register},
-    {path: '/services', component: ServiceCreation, meta: {requiresLogin: true, role:"admin" }},
-    {path: '/services/:id', component: ServiceUpdate, props:true, meta: {requiresLogin: true, role:"admin" }},
     {
         path: '/admin',
         component: AdminDash,
         meta: { requiresLogin: true, role: "admin" },
         children: [
-            { path: 'search', component: Search }
+            { path: 'search', component: Search },
+            {path: '/services', component: ServiceCreation},
+            {path: '/services/:id', component: ServiceUpdate, props:true},
+
+
         ]
     },
     {
@@ -29,7 +33,19 @@ const routes= [
         component: UserDash,
         meta: { requiresLogin: true, role: "user" },
         children: [
-            { path: 'search', component: Search }
+            { path: 'search', component: Search },
+            {path: ':id', component:UserUpdate, props:true},
+
+        ]
+    },
+    {
+        path: '/professional',
+        component: ProfessionalDash,
+        meta: { requiresLogin: true, role: "service_professional" },
+        children: [
+            { path: 'search', component: Search },
+            {path: ':id', component:UserUpdate, props:true},
+
         ]
     },
 

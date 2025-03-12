@@ -1,9 +1,17 @@
 export default {
   template: `
   
-  <div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="card p-4 shadow-lg w-100" style="max-width: 400px;">
-      <router-link to="/" class="text-primary text-decoration-none mb-3 d-block">Home</router-link>
+  <div class="container d-flex justify-content-center align-items-center vh-100"
+    style="
+    background-image: url('/static/static/images/logo.png');
+    background-size: cover;
+    background-position: center;">
+    <div 
+      class="p-4 shadow-lg w-100 rounded-4 text-dark " 
+      style="
+      max-width: 400px;
+      background: linear-gradient(to bottom right, #e3f2fd,rgba(187, 222, 251, 0.6));">
+      <router-link to="/" class="text-primary text-decoration-none fw-bold d-inline-block mb-3">Home</router-link>
       <h2 class="text-center mb-4">Login</h2>
 
       <div class="mb-3">
@@ -14,6 +22,15 @@ export default {
       </div>
 
       <button class="btn btn-primary w-100" @click="submitLogin">Login</button>
+      <p class="text-center mt-3">
+        New user? 
+        <router-link 
+          v-if="!$store.state.loggedIn" 
+          to="/register" 
+          class="text-success text-decoration-none fw-bold ms-1">
+          Register here
+        </router-link>
+      </p>
     </div>
   </div>
         `,
@@ -44,6 +61,10 @@ export default {
         else if (data.role =='user') {
           this.$store.commit('setUser');
           this.$router.push('/user');
+        }
+        else if (data.role =='service_professional') {
+          this.$store.commit('setUser');
+          this.$router.push('/professional');
         }
         // this.$router.push('/services');
       

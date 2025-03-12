@@ -4,7 +4,7 @@ export default{
     template:`
         <div>
             <Navbar />
-            <div v-if="$route.path === '/user'">
+            <div v-if="$route.path === '/professional'">
                 <ServicePage />
             </div> 
             <router-view></router-view>

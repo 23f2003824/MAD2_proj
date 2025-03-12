@@ -1,6 +1,7 @@
+from datetime import datetime
 from flask import request, current_app as app
 from flask_restful import Resource, Api,fields, marshal_with, marshal
-from backend.models import Service,User,Role, db
+from backend.models import Service, ServiceRequest,User,Role, db
 from flask_security import auth_required, current_user
 cache= app.cache
 
@@ -96,6 +97,7 @@ api.add_resource( ServiceListAPI, '/services')
 user_fields={
     'id': fields.Integer,
     'username': fields.String,
+    'name': fields.String,
     'email': fields.String,
     'roles': fields.List(fields.String),
     'active': fields.Boolean
@@ -115,10 +117,54 @@ class UserAPI(Resource):
             return users_with_user_role, 200
         except Exception as e:
             return {'message': str(e)}, 500
+        
 
-api.add_resource( UserAPI, '/users')
+    @auth_required('token')
+    def delete(self, user_id):
+        user= User.query.get(user_id)
+        if not user:
+            return {'message': 'user not found'}, 404
+        
+        if current_user.roles[0].name == 'user':
+            db.session.delete(user)
+            db.session.commit()
+            return {'message': 'user deleted successfully'}, 200
+        else:
+            return {'message': 'you are not authorized to delete the user'}, 403
+        
+    @auth_required('token')
+    def put(self, user_id):
+        user= User.query.get(user_id)
+        if not user:
+            return {'message': 'user not found'}, 404
+        
+        if current_user.roles[0].name == 'user' and user.roles[0].name == 'user':
+            data= request.get_json()
+            username = data.get('username', user.username)
+            email = data.get('email', user.email)
+            name=data.get('name', user.name)
+            # Update service fields
+            user.username = username
+            user.email=email
+            user.name=name
+            # Commit changes to the database
+            db.session.commit()
+            return {'message': 'user updated successfully'}, 200
+        else:
+            return {'message': 'you are not authorized to update the user'}, 403
 
+api.add_resource( UserAPI, '/users', '/user/<int:user_id>')
 
+class IndividualUserAPI(Resource):
+    @auth_required('token')
+    @marshal_with(user_fields)
+    def get(self, user_id):
+        user= User.query.get(user_id)
+        if not user:
+            return {'message': 'user not found'}, 404
+        return user, 200
+
+api.add_resource(IndividualUserAPI, '/individualUser/<int:user_id>')
 
 # service_professional API
 professional_fields={
@@ -129,6 +175,12 @@ professional_fields={
     'active': fields.Boolean,
     'accepted':fields.Boolean,
     'rejected':fields.Boolean,
+    'name': fields.String,
+    'description': fields.String,
+    'experience': fields.Integer,
+    'service_type': fields.String,
+    'rating':fields.Integer
+
 }
 
 class professionalAPI(Resource):
@@ -181,7 +233,7 @@ class AcceptProfileAPI(Resource):
         user = User.query.get(user_id)
         if not user:
             return {"message": "User not found"}, 404
-        if current_user.roles[0].name == "admin":
+        if current_user.roles[0].name == "admin" and not(user.rejected):
 
             user.accepted = data.get('accepted')
             db.session.commit()
@@ -207,6 +259,167 @@ class RejectProfileAPI(Resource):
 
             user.rejected = data.get('rejected')
             db.session.commit()
+            return {"message": "User rejected", "rejected": user.rejected, "user_id": user.id}, 200
         else:
             return {"message": "You are not authorized to update the user"}, 403
+api.add_resource(RejectProfileAPI, '/rejectProf/<int:user_id>')
+
+
+# service booking API
+class BookServiceAPI(Resource):
+    @auth_required('token')
+    def post(self):
+        data = request.get_json()
+        professional_id = data.get('professional_id')
+        service_id = data.get('service_id')
+        address = data.get('address')
+        date_of_request = data.get('date_of_request')  # Format: "YYYY-MM-DD"
+        remarks = data.get('remarks')
+
+        professional = User.query.get(professional_id)
+        service = Service.query.get(service_id)
+
+        if not professional or not service:
+            return {'message': 'Invalid professional or service'}, 400
+
+        # Validate required fields
+        if not address or not date_of_request:
+            return {'message': 'Address and date of request are required'}, 400
+
+        try:
+            date_of_request = datetime.strptime(date_of_request, "%Y-%m-%d")
+        except ValueError:
+            return {'message': 'Invalid date format. Use YYYY-MM-DD.'}, 400
+
+        # Create a new booking
+        booking = ServiceRequest(
+            user_id=current_user.id,
+            professional_id=professional_id,
+            service_id=service_id,
+            address=address,
+            date_of_request=date_of_request,  # Stores full datetime
+            remarks=remarks
+        )
+
+        db.session.add(booking)
+        db.session.commit()
+
+        return {'message': 'Service booked successfully', 'booking_id': booking.id}, 201
+
+api.add_resource(BookServiceAPI, '/book_service')
+
+
+# service Request API
+class ServiceRequestAPI(Resource):
+    @auth_required('token')
+    def get(self):
+        if current_user.roles[0].name == "user":
+            # Fetch service requests made by the user
+            service_requests = ServiceRequest.query.filter_by(user_id=current_user.id).all()
+        elif current_user.roles[0].name == "service_professional":
+            # Fetch service requests assigned to the professional
+            service_requests = ServiceRequest.query.filter_by(professional_id=current_user.id).all()
+        else:
+            return {'message': 'Not authorised to view service history'}, 403
+
+        if not service_requests:
+            return {'message': 'No service requests found'}, 404
+
+        requests_data = []
+        for request in service_requests:
+            requests_data.append({
+                'id': request.id,
+                'service_id': request.service_id,
+                'service_name': request.service.name,
+                'user_id': request.user_id,
+                'professional_id': request.professional_id,
+                'professional_name': request.professional.name,
+                'user_name': request.user.name,
+                'service_status': request.service_status,
+                'address': request.address,
+                'date_of_request': request.date_of_request.strftime('%Y-%m-%d'),
+                'date_of_completion': request.date_of_completion.strftime('%Y-%m-%d') if request.date_of_completion else None,
+                'remarks': request.remarks,
+                'rating': request.service_rating
+            })
+
+        return {'service_requests': requests_data}, 200
+    
+class UpdateServiceRequestStatusAPI(Resource):
+    @auth_required('token')
+    def put(self):
+        data = request.get_json()
+        request_id = data.get('request_id')
+        new_status = data.get('new_status')
+
+        if not request_id or not new_status:
+            return {'message': 'Missing request_id or new_status'}, 400
+
+        service_request = ServiceRequest.query.get(request_id)
+
+        if not service_request:
+            return {'message': 'Service request not found'}, 404
+
+
+        # Update status
+        service_request.service_status = new_status
+
+        if new_status == "closed":
+            service_request.date_of_completion = datetime.now()
+
+        db.session.commit()
+
+        return {
+            'message': 'Service request updated successfully',
+            'service_status': service_request.service_status
+        }, 200
+api.add_resource(UpdateServiceRequestStatusAPI, '/update_request_status')
+
+
+api.add_resource(ServiceRequestAPI, '/service_requests')
+
+
+# professional rating api
+class RateProfessionalAPI(Resource):
+    @auth_required('token')
+    def post(self, professional_id):
+        data = request.get_json()
+        new_rating = data.get('rating')
+        request_id = data.get('request_id')  # ✅ Get the service request ID
+
+        if not (1 <= new_rating <= 5):
+            return {"message": "Invalid rating. Must be between 1 and 5."}, 400
+
+        # Fetch the professional
+        professional = User.query.get(professional_id)
+        if not professional:
+            return {"message": "Professional not found"}, 404
+
+        # Fetch the related service request
+        service_request = ServiceRequest.query.get(request_id)
+        if not service_request or service_request.professional_id != professional_id:
+            return {"message": "Invalid service request for this professional"}, 400
+
+        # Store the rating in the specific service request
+        service_request.service_rating = new_rating
+
+        # Update professional's average rating
+        if professional.rating is None:
+            professional.rating = new_rating
+            professional.rating_count = 1
+        else:
+            total_ratings = professional.rating_count
+            professional.rating = (professional.rating * total_ratings + new_rating) / (total_ratings + 1)
+            professional.rating_count += 1
+
+        db.session.commit()
+
+        return {
+            "message": "Rating submitted successfully",
+            "new_average_rating": round(professional.rating, 2),
+            "service_request_id": service_request.id,
+            "service_rating": service_request.service_rating
+        }, 200
+
+api.add_resource(RateProfessionalAPI, '/rate_professional/<int:professional_id>')
 

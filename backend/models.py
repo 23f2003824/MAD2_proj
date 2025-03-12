@@ -24,6 +24,8 @@ class User(db.Model, UserMixin):
     description= db.Column(db.String, nullable= True)
     service_type= db.Column(db.String, nullable= True)
     experience= db.Column(db.Integer, nullable= True)
+    rating= db.Column(db.Integer,nullable=True)
+    rating_count=db.Column(db.Integer,nullable=True)
 
 
 
@@ -49,10 +51,16 @@ class Service(db.Model):
 
 class ServiceRequest(db.Model):
     id= db.Column(db.Integer, primary_key= True)
-    user_id= db.Column(db.Integer, db.ForeignKey('user.id'))
-    service_id= db.Column(db.Integer, db.ForeignKey('service.id'))
-    date_of_request= db.Column(db.DateTime, nullable= False)
-    date_of_completion= db.Column(db.DateTime, nullable= True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
+    date_of_request= db.Column(db.Date, nullable= False)
+    date_of_completion= db.Column(db.Date, nullable= True)
     service_status= db.Column(db.String, nullable= False, default= 'pending')
     remarks= db.Column(db.String, nullable= True)
     address= db.Column(db.String, nullable= False)
+    service_rating=db.Column(db.Integer,nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id], backref='service_requests')
+    professional = db.relationship('User', foreign_keys=[professional_id])
+    service = db.relationship('Service', backref='requests')

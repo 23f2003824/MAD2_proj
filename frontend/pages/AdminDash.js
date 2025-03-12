@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar.js";
-import ServicePage from "../pages/ServicePage.js";
-import UserPage from "../pages/UserPage.js";
+import ServicePage from "../components/ServicePage.js";
+import UserPage from "../components/UserPage.js";
 
 
 export default{
