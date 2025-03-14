@@ -155,7 +155,7 @@ export default {
                 </td>
                 <td>{{ request.date_of_completion || 'N/A' }}</td>
                 <td>
-                  <button v-if="!request.professional_active" class="btn btn-danger btn-sm" :disabled="!request.professional_active"
+                  <button v-if="!request.professional_active" class="btn btn-danger btn-sm" disabled
                   :style="{cursor:request.professional_active?'':'not-allowed'}">Professional is Blocked</button>
                   <button v-else
                   class="btn btn-danger btn-sm"
@@ -530,8 +530,14 @@ export default {
             professional_name: this.professionals.find(p => p.id === this.bookingForm.professional_id)?.name || "Unknown Professional",
             date_of_request: this.bookingForm.date_of_request,
             service_status: "pending", // Default status
-            date_of_completion: null
+            date_of_completion: null,
+            professional_active: this.professionals.find(p => p.id === this.bookingForm.professional_id)?.active || false
           });
+          const resProfessionals = await fetch(location.origin + "/api/professionals", {
+            headers: { "Authentication-Token": this.$store.state.auth_token }
+          });
+          this.professionals = (await resProfessionals.json()).filter((p) => p.accepted);
+          // await this.refreshServiceHistory();
           console.log("Updated serviceRequests:", this.serviceRequests);
           const modalEl = document.getElementById('bookingModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
@@ -546,6 +552,25 @@ export default {
         }
       } catch (error) {
         console.error("Error booking service:", error);
+      }
+    },
+    async refreshServiceHistory() {
+      try {
+        const response = await fetch('/api/service_history', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authentication-Token': this.$store.state.token
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          this.serviceRequests = data.service_requests;
+        } else {
+          console.error('Failed to fetch service history');
+        }
+      } catch (error) {
+        console.error('Error fetching service history:', error);
       }
     },
     openRatingModal(request) {
