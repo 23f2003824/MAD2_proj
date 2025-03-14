@@ -111,21 +111,21 @@ def send_monthly_activity_report():
         users = User.query.join(UserRoles).join(Role).filter(Role.name == "user").all()
         
         for user in users:
-            first_day_of_current_month = datetime.now().replace(day=1)
+            # first_day_of_current_month = datetime.now().replace(day=1)
 
-            # Get last day of the previous month (1 day before the first day of current month)
-            last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+            # # Get last day of the previous month (1 day before the first day of current month)
+            # last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
 
-            # Get first day of the previous month
-            first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
+            # # Get first day of the previous month
+            # first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
 
-            start_date = first_day_of_previous_month  # First day of last month
-            end_date = first_day_of_current_month  #First day of current month
+            # start_date = first_day_of_previous_month  # First day of last month
+            # end_date = first_day_of_current_month  #First day of current month
 
 
             # hardcoded dates for checking
-            # start_date = datetime(2025, 3, 1)  # Example: 1st Feb 2024
-            # end_date = datetime(2025, 3, 23) 
+            start_date = datetime(2025, 3, 1)  # Example: 1st Feb 2024
+            end_date = datetime(2025, 3, 23) 
 
 
             services_requested = ServiceRequest.query.filter(
@@ -136,7 +136,7 @@ def send_monthly_activity_report():
             services_closed = ServiceRequest.query.filter(
                 ServiceRequest.user_id == user.id,
                 ServiceRequest.service_status == "closed",
-                ServiceRequest.date_of_completion >= start_date,
+                ServiceRequest.date_of_request >= start_date,
                 ServiceRequest.date_of_completion < end_date
             ).count()
             services_pending = ServiceRequest.query.filter(
