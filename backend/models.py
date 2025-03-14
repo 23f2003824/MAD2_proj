@@ -19,7 +19,7 @@ class User(db.Model, UserMixin):
     accepted= db.Column(db.Boolean, default=False)
     rejected= db.Column(db.Boolean, default=False)
     #attributes for service professional
-    name= db.Column(db.String, nullable= True)
+    name= db.Column(db.String, nullable= False)
     date_created= db.Column(db.DateTime, default= datetime.now())
     description= db.Column(db.String, nullable= True)
     service_type= db.Column(db.String, nullable= True)

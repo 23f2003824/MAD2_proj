@@ -3,8 +3,21 @@
 export default {
     template: `
 <div>
-    <div class="p-4">
-            
+    <div v-if="$store.state.role === 'service_professional'" class="p-4">
+        <h3 class="text-primary mb-3">Your Details</h3>
+        <div v-if="myProfile" class="card shadow-sm border-0 p-4" style="border-radius: 10px; background: #f8f9fa;">
+            <div class="card-body">
+                <h4 class="text-dark">{{ myProfile.name }}</h4>
+                <p class="text-muted mb-2"><strong>Email:</strong> {{ myProfile.email }}</p>
+                <hr>
+                <p><strong>Service Offered:</strong> <span class="badge badge-pill badge-success">{{ myProfile.service_type }}</span></p>
+                <p><strong>Experience:</strong> <span class="text-info">{{ myProfile.experience }} Years</span></p>
+                <p><strong>Current Rating:</strong> <span class="text-warning">⭐ {{ myProfile.rating }}</span></p>
+            </div>
+        </div>
+    <p v-else class="text-center text-muted">Loading your profile...</p>
+    </div>
+    <div class="p-4" v-if="$store.state.role === 'admin'">        
         <h3>Service Professional Requests:</h3>
         <div v-if="pendingProf.length > 0" class="accordion" id="accordionExample">
             <div v-for="professional in pendingProf" :key="professional.id" class="accordion-item">
@@ -47,7 +60,7 @@ export default {
         </div>
             <p v-else class="text-center text-muted">No Service Professional Requests</p>
     </div>
-    <div class="p-4">
+    <div class="p-4" v-if="$store.state.role === 'admin'">
         
         <h3>Service Professional:</h3>
         <div v-if="professionals.length > 0" class="accordion" id="accordionExample">
@@ -91,38 +104,26 @@ export default {
 
         
     </div>
-    <div class="p-4">
-        <h3>Users:</h3>
-            <div v-if="users.length>0">
-                <div v-for="user in users" :key="user.id">
-                    <div :class='"user"+user.id'   :style="{
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'flex-start', 
-                        padding: '10px 20px', 
-                        margin: '1px', 
-                        backgroundColor: 'rgb(246, 229, 208)', 
-                        borderRadius: '5px',
-                    }">
-                        <div class="btn" style="flex-grow: 1; text-align: left;">
-                            <div class="d-flex gap-2">
-                                <div style="flex-grow: 1; text-align: left;">
-                                    <p style="margin: 0">User: {{ user.username }}</p>
-                                    <p style="margin: 0">Email: {{ user.email }}</p>
-                                </div>
-                                    <button 
-                                    class="btn" 
-                                    :class="user.active ? 'btn-outline-danger' : 'btn-outline-success'"
-                                    @click="toggleStatus(user)">
-                                    {{ user.active ? "Block" : "Unblock" }}
-                                    </button>                             
-                                </div>
-                        </div>
+    <di<div class="p-4" v-if="$store.state.role === 'admin'">
+        <h3 class="mb-3">Users</h3>
+        <div v-if="users.length > 0" class="d-flex flex-column gap-3">
+            <div v-for="user in users" :key="user.id" class="card shadow-sm border-0 p-3 bg-light">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="text-dark mb-1">{{ user.username }}</h5>
+                        <p class="text-muted m-0"><strong>Email:</strong> {{ user.email }}</p>
                     </div>
+                    <button class="btn"
+                        :class="user.active ? 'btn-outline-danger' : 'btn-outline-success'"
+                        @click="toggleStatus(user)">
+                        {{ user.active ? "Block" : "Unblock" }}
+                    </button>
                 </div>
             </div>
-            <p v-else class="text-center text-muted">No Users available</p>
+        </div>
+        <p v-else class="text-center text-muted">No Users available</p>
     </div>
+
 </div>
 `,
 
@@ -133,6 +134,7 @@ export default {
             professionals:[],
             pendingProf:[],
             rejectProfArr:[],
+            myProfile: null
     
         }
     },
@@ -156,6 +158,10 @@ export default {
         this.users = usersData;
         this.pendingProf = professionalsData.filter(professional => !professional.accepted || professional.rejected);
         this.professionals = professionalsData.filter(professional => professional.accepted);
+        if (this.$store.state.role === 'service_professional') {
+            const myProfileData = this.professionals.find(pro => pro.id === this.$store.state.user_id);
+            this.myProfile = myProfileData;
+        }
     },
     methods: {
         async toggleStatus(user) {

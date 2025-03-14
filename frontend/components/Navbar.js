@@ -1,7 +1,22 @@
 export default {
     template: `
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-height: 80px; padding: 10px 20px;">
             <div class="container-fluid">
+                <div 
+                class="navbar-brand" 
+                style="
+                width: 70px; 
+                height: 70px; 
+                background-image: url('/static/static/images/Untitled design.png'); 
+                background-size: cover; 
+                background-position: center; 
+                border-radius: 50%; 
+                border: 2px solid #ffffff; 
+                margin-right: 15px; 
+                transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;"
+            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0px 4px 10px rgba(0, 0, 0, 0.2)';"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                </div>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
@@ -15,7 +30,9 @@ export default {
                             <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='service_professional'" to="/professional/search">Search</router-link>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Summary</a>
+                            <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='service_professional'" to="/professional/summary">Summary</router-link>
+                            <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='user'" to="/user/summary">Summary</router-link>
+                            <router-link class="nav-link" v-if="$store.state.loggedIn && $store.state.role=='admin'" to="/admin/summary">Summary</router-link>
                         </li>
                     </ul>
                     <ul class="navbar-nav ms-auto">
@@ -43,6 +60,23 @@ export default {
             
         
         `,
+        data(){
+            return {
+                professionals: [],
+            }
+        },
+        async mounted(){
+                try {
+                    const response = await fetch(`${location.origin}/api/professionals`);
+                    if (response.ok) {
+                        this.professionals = await response.json();
+                    } else {
+                        console.error("Failed to fetch professionals.");
+                    }
+                } catch (error) {
+                    console.error("Error fetching professionals:", error);
+                }
+        },
         methods: {
             logout() {
                 this.$store.commit('logout');  // Perform logout

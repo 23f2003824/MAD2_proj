@@ -40,16 +40,41 @@ def download_service_csv():
     return {'task_id': task.id}
 
 
+
 @app.get('/getCsv/<id>')
 @auth_required('token')
 def download_csv(id):
     result = AsyncResult(id)
-    file_path = os.path.abspath(f'./backend/celery/user_downloads/{result.result}')
-    print(f"Trying to retrieve file: {file_path}") 
-    if result.ready():
-        return send_file(f'./backend/celery/user_downloads/{result.result}',result.get(), as_attachment=True), 200 #result.result has the filename
-    else:
+
+    print(f"Checking task: {id}, Ready: {result.ready()}, Result: {result.result}")
+
+    if not result.ready():
+        print("Task is not completed yet")
         return jsonify({'message': 'Task is not completed'}), 404
+
+    filename = result.result
+
+    if not filename:
+        print("Error: Task result is None")
+        return jsonify({'message': 'Task result is None'}), 500
+
+    file_path = os.path.abspath(f'./backend/celery/user_downloads/{filename}')
+    print(f"Generated file path: {file_path}")
+
+    existing_files = os.listdir('./backend/celery/user_downloads/')  # Debugging
+    print(f"Existing files: {existing_files}")
+
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        return jsonify({'message': 'File not found'}), 500
+
+    try:
+        print("Sending file...")
+        return send_file(file_path, as_attachment=True), 200
+    except Exception as e:
+        print(f"Error in send_file: {e}")
+        return jsonify({'message': str(e)}), 500
+
 
 # demo route to check cache
 
@@ -72,17 +97,19 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    if not email and not password:
+    if not email or not password:
         return jsonify({'message': 'email and password are required'}), 400
     
     user= datastore.find_user(email= email)
     if not user:
         return jsonify({'message': 'user not found or invalid email'}), 404
+    if not user.active:  
+        return jsonify({'message': 'Your account is inactive. Please contact support at admin@study.iitm.ac.in'}), 403
     
     if verify_password(password, user.password):
         return jsonify({'token': user.get_auth_token(),'email': user.email, 'role': user.roles[0].name, 'id': user.id, 'username': user.username}), 200
     
-    return jsonify({'message': 'invalid password'}), 401
+    return jsonify({'message': 'invalid password!'}), 401
 
 
 @app.route('/register', methods=['POST'])

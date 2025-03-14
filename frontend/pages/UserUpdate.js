@@ -56,7 +56,13 @@ export default {
             console.log("Update success");
             const data = await res.json();
             console.log(data);
-            this.$router.push('/user');  // Redirect after successful creation
+            if (this.$store.state.role==='user'){
+
+              this.$router.push('/user');  // Redirect after successful creation
+            }
+            else if(this.$store.state.role==='service_professional'){
+              this.$router.push('/professional'); 
+            }
         } else {
             console.error("Update failed");
         }

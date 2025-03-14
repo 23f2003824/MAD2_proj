@@ -12,6 +12,7 @@ import Search from '../components/SearchPage.js';
 import UserDash from '../pages/UserDash.js';
 import UserUpdate from '../pages/UserUpdate.js';
 import ProfessionalDash from '../pages/ProfessionalDash.js';
+import Summary from '../components/Summary.js';
 const routes= [
     {path: '/', component: frontPage},
     {path: '/login', component: login},
@@ -22,6 +23,7 @@ const routes= [
         meta: { requiresLogin: true, role: "admin" },
         children: [
             { path: 'search', component: Search },
+            {path: 'summary', component:Summary, props:true},
             {path: '/services', component: ServiceCreation},
             {path: '/services/:id', component: ServiceUpdate, props:true},
 
@@ -34,6 +36,7 @@ const routes= [
         meta: { requiresLogin: true, role: "user" },
         children: [
             { path: 'search', component: Search },
+            {path: 'summary', component:Summary, props:true},
             {path: ':id', component:UserUpdate, props:true},
 
         ]
@@ -44,6 +47,7 @@ const routes= [
         meta: { requiresLogin: true, role: "service_professional" },
         children: [
             { path: 'search', component: Search },
+            {path: 'summary', component:Summary, props:true},
             {path: ':id', component:UserUpdate, props:true},
 
         ]

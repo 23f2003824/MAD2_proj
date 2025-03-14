@@ -53,8 +53,9 @@ export default {
         </div>
 
         <button class="btn btn-primary w-100" @click="submitLogin">Register</button>
-        <p class="text-center mt-3">
-        Already Registered? 
+        <span class="text-center mt-3">
+          Already Registered? 
+        </span>
         <router-link 
           v-if="!$store.state.loggedIn" 
           to="/login" 
@@ -89,8 +90,8 @@ export default {
     },
     methods: {
       async submitLogin() {
-        if (!this.username || !this.email || !this.password || !this.role) {
-          alert("Username, Email, Password and Role must be provided");
+        if (!this.username || !this.email || !this.password || !this.role|| !this.name) {
+          alert("Name, Username, Email, Password and Role must be provided");
           return;
         }
         if (this.role === "service_professional") {
@@ -110,6 +111,7 @@ export default {
         });
         if (res.ok) {
           console.log("registration success");
+          this.$router.push('/');
           const data = await res.json();
           console.log(data);
         }

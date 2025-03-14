@@ -65,7 +65,7 @@ export default {
         <p v-else class="text-center text-muted">No services available at the moment.</p>
       </div>
       <button v-if="$store.state.role=='admin'" @click="$router.push('/services')" style="margin-top: 20px;" class="btn btn-outline-success">New service +</button>
-      <button v-if="$store.state.role=='admin'" @click="getCsv" style="margin-top: 20px;" class="btn btn-outline-info">Get Services Data
+      <button v-if="$store.state.role=='admin'" @click="getCsv" style="margin-top: 20px;" class="btn btn-outline-info">Get Service Requests Data
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 8px;">
               <title>Download</title>
               <path d="M8 17V15H16V17H8M16 10L12 14L8 10H10.5V7H13.5V10H16M5 3H19C20.11 3 21 3.9 21 5V19C21 20.11 20.11 21 19 21H5C3.9 21 3 20.11 3 19V5C3 3.9 3.9 3 5 3M5 5V19H19V5H5Z" />
@@ -87,12 +87,22 @@ export default {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="request in todaysAcceptedRequests" :key="request.id">
-              <td>{{ request.user_name }}</td>
+              <tr v-for="request in todaysAcceptedRequests" :key="request.id" :style="{
+                backgroundColor: request.user_active ? '' :' #f8d7da',
+                color: request.user_active ? '' : '#721c24',
+                cursor: request.user_active ? 'pointer' : 'not-allowed',
+                }">
+              <td :style="{
+                backgroundColor: request.user_active ? '' :' #f8d7da',
+                color: request.user_active ? '' : '#721c24',
+                cursor: request.user_active ? 'pointer' : 'not-allowed',
+                }">{{ request.user_name }}</td>
                 <td>{{ request.address }}</td>
                 <td>{{ request.date_of_request }}</td>
                 <td class="text-success">{{ request.service_status }}</td>
-                  <td><button class="btn btn-success btn-sm" @click="updateStatus(request, 'completed')">Mark Completed</button>
+                <td>
+                  <button v-if="!request.user_active" class="btn btn-danger btn-sm" :disabled="!request.user_active">User is Blocked</button>
+                  <button v-else class="btn btn-success btn-sm" @click="updateStatus(request, 'completed')">Mark Completed</button>
                 </td>
               </tr>
             </tbody>
@@ -119,28 +129,49 @@ export default {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="request in serviceRequests" :key="request.id">
+              <tr v-for="request in serviceRequests" :key="request.id" :style="{
+                backgroundColor: request.professional_active ? '' :' #f8d7da',
+                color: request.professional_active ? '' : '#721c24',
+                cursor: request.professional_active ? 'pointer' : 'not-allowed',
+                border: request.professional_active ? '' : '1px solid #f5c6cb'
+                }">
                 <td>{{ request.service_name }}</td>
-                <td>{{ request.professional_name }}</td>
+                <td :style="{
+                  backgroundColor: request.professional_active ? '' :' #f8d7da',
+                  color: request.professional_active ? '' : '#721c24',
+                  cursor: request.professional_active ? 'pointer' : 'not-allowed',
+                  border: request.professional_active ? '' : '1px solid #f5c6cb'
+                  }">{{ request.professional_name }}</td>
                 <td>{{ request.date_of_request }}</td>
                 <td>
                   <span :class="{
                     'text-warning': request.service_status === 'pending',
                     'text-success': request.service_status === 'completed',
                     'text-info': request.service_status === 'accepted',
-                    'text-danger': request.service_status === 'closed'
+                    'text-danger': request.service_status === 'closed' || request.service_status === 'rejected'
                   }">
                     {{ request.service_status }}
                   </span>
                 </td>
                 <td>{{ request.date_of_completion || 'N/A' }}</td>
                 <td>
-                  <button
-                    class="btn btn-danger btn-sm"
-                    @click="openRatingModal(request)"
-                    :disabled="!['pending', 'completed'].includes(request.service_status)">
-                    {{ request.service_status === 'closed' ? 'Service Closed' : 'Close the Service' }}
+                  <button v-if="!request.professional_active" class="btn btn-danger btn-sm" :disabled="!request.professional_active"
+                  :style="{cursor:request.professional_active?'':'not-allowed'}">Professional is Blocked</button>
+                  <button v-else
+                  class="btn btn-danger btn-sm"
+                  @click="handleRequest(request)"
+                  :disabled="request.service_status === 'closed' || request.service_status === 'rejected' || request.service_status === 'accepted'">
+                  {{
+                    request.service_status === 'closed'
+                      ? 'Service Request Closed'
+                      : request.service_status === 'rejected'
+                        ? 'Rejected'
+                        : request.service_status === 'pending'
+                          ? 'Delete Request'
+                          : 'Close the Service Request'
+                  }}
                   </button>
+              
                 </td>
               </tr>
             </tbody>
@@ -186,8 +217,17 @@ export default {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="request in pendingServices" :key="request.id">
-                <td>{{ request.user_name }}</td>
+              <tr v-for="request in pendingServices" :key="request.id"
+              :style="{
+                backgroundColor: request.user_active ? '' :' #f8d7da',
+                color: request.user_active ? '' : '#721c24',
+                cursor: request.user_active ? 'pointer' : 'not-allowed',
+                }">
+                <td :style="{
+                  backgroundColor: request.user_active ? '' :' #f8d7da',
+                  color: request.user_active ? '' : '#721c24',
+                  cursor: request.user_active ? 'pointer' : 'not-allowed',
+                  }">{{ request.user_name }}</td>
                 <td>{{ request.address }}</td>
                 <td>{{ request.date_of_request }}</td>
                 <td>{{ request.remarks }}</td>
@@ -196,23 +236,42 @@ export default {
                     'text-warning': request.service_status === 'pending',
                     'text-info': request.service_status === 'accepted',
                     'text-success': request.service_status === 'completed',
+                    'text-danger': request.service_status === 'rejected',
                     }">
                     {{ request.service_status }}
                   </span>
                 </td>                
                 <td>
+                <button v-if="!request.user_active" class="btn btn-danger btn-sm" :disabled="!request.user_active"
+                :style="{cursor:request.user_active?'':'not-allowed'}">User is Blocked</button>
+                <div v-else>
                   <button
-                    class="btn btn-success btn-sm"
-                    @click="updateStatus(request, 'accepted')"
+                      class="btn btn-success btn-sm me-2"
+                      @click="updateStatus(request, 'accepted')"
+                      :disabled="request.service_status !== 'pending'|| request.service_status === 'rejected'">
+                      {{
+                        request.service_status === 'completed' 
+                          ? 'Completed' 
+                          : request.service_status === 'accepted' 
+                            ? 'Accepted' 
+                            : 'Accept'
+                      }}
+                    </button>
+
+                    <button
+                    class="btn btn-danger btn-sm"
+                    @click="updateStatus(request, 'rejected')"
                     :disabled="request.service_status !== 'pending'">
                     {{
                       request.service_status === 'completed' 
                         ? 'Completed' 
-                        : request.service_status === 'accepted' 
-                          ? 'Accepted' 
-                          : 'Accept'
+                        : request.service_status === 'rejected' 
+                          ? 'Rejected' 
+                          : 'Reject'
                     }}
-                  </button>
+                    </button>
+                  </div>
+
                 </td>
 
               </tr>
@@ -350,7 +409,7 @@ export default {
       const proId = this.$store.state.user_id;
       return this.serviceRequests.filter(req => 
         req.professional_id === proId &&
-        (req.service_status === 'pending' || req.service_status === 'accepted' || req.service_status === 'completed'));
+        (req.service_status === 'pending' || req.service_status === 'accepted' || req.service_status === 'completed' || req.service_status === 'rejected'));
     }
   },
   
@@ -418,6 +477,7 @@ export default {
         },
       });
       const task_id = (await res.json()).task_id;
+      console.log(task_id);
       const interval = setInterval(async () => {
         const csv = await fetch(`${location.origin}/getCsv/${task_id}`, {
           headers: {
@@ -438,7 +498,7 @@ export default {
           document.body.removeChild(a);
           clearInterval(interval);
         }
-      }, 100);
+      }, 10000);
     },
     openBookingModal(professionalId, serviceId) {
       this.bookingForm.professional_id = professionalId;
@@ -464,15 +524,15 @@ export default {
         const data = await res.json();
         if (res.ok) {
           alert("Service booked successfully!");
-                // Update the service history immediately
           this.serviceRequests.push({
-            id: data.request_id, // Use the ID from the API response
+            id: data.booking_id,
             service_name: this.services.find(s => s.id === this.bookingForm.service_id)?.name || "Unknown Service",
             professional_name: this.professionals.find(p => p.id === this.bookingForm.professional_id)?.name || "Unknown Professional",
             date_of_request: this.bookingForm.date_of_request,
             service_status: "pending", // Default status
             date_of_completion: null
           });
+          console.log("Updated serviceRequests:", this.serviceRequests);
           const modalEl = document.getElementById('bookingModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) {
@@ -525,6 +585,39 @@ export default {
           }
       } catch (error) {
           console.error("Error submitting rating:", error);
+      }
+    },
+    handleRequest(request) {
+      if (request.service_status === "pending") {
+        this.deleteRequest(request.id);
+      } else {
+        this.openRatingModal(request);
+      }
+    },
+  
+    async deleteRequest(requestId) {
+      if (!confirm("Are you sure you want to delete this request?")) return;
+  
+      try {
+
+        const response = await fetch(`/api/service_requests/${requestId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authentication-Token": this.$store.state.auth_token,
+          },
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          alert("Request deleted successfully!");
+          this.serviceRequests = this.serviceRequests.filter((r) => r.id !== requestId);
+      
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        console.error("Error deleting request:", error);
       }
     }
   },

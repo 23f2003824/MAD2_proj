@@ -1,7 +1,8 @@
 from datetime import datetime
 from flask import request, current_app as app
 from flask_restful import Resource, Api,fields, marshal_with, marshal
-from backend.models import Service, ServiceRequest,User,Role, db
+from sqlalchemy import func
+from backend.models import Service, ServiceRequest,User,Role, UserRoles, db
 from flask_security import auth_required, current_user
 cache= app.cache
 
@@ -125,7 +126,7 @@ class UserAPI(Resource):
         if not user:
             return {'message': 'user not found'}, 404
         
-        if current_user.roles[0].name == 'user':
+        if current_user.roles[0].name == 'user' or current_user.roles[0].name == 'service_professional':
             db.session.delete(user)
             db.session.commit()
             return {'message': 'user deleted successfully'}, 200
@@ -138,7 +139,7 @@ class UserAPI(Resource):
         if not user:
             return {'message': 'user not found'}, 404
         
-        if current_user.roles[0].name == 'user' and user.roles[0].name == 'user':
+        if current_user.roles[0].name == 'user' or current_user.roles[0].name == 'service_professional':
             data= request.get_json()
             username = data.get('username', user.username)
             email = data.get('email', user.email)
@@ -332,9 +333,11 @@ class ServiceRequestAPI(Resource):
                 'service_id': request.service_id,
                 'service_name': request.service.name,
                 'user_id': request.user_id,
+                'user_name': request.user.name,
+                'user_active': request.user.active,  
                 'professional_id': request.professional_id,
                 'professional_name': request.professional.name,
-                'user_name': request.user.name,
+                'professional_active': request.professional.active,
                 'service_status': request.service_status,
                 'address': request.address,
                 'date_of_request': request.date_of_request.strftime('%Y-%m-%d'),
@@ -344,6 +347,32 @@ class ServiceRequestAPI(Resource):
             })
 
         return {'service_requests': requests_data}, 200
+    @auth_required('token')
+    def delete(self, request_id):
+        # Fetch the service request by ID
+        request = ServiceRequest.query.get(request_id)
+
+        if not request:
+            return {'message': 'Service request not found'}, 404
+
+        # Ensure only the request owner can delete it
+        if request.user_id != current_user.id:
+            return {'message': 'Unauthorized to delete this request'}, 403
+
+        # Allow deletion only if the request is in "pending" state
+        if request.service_status != "pending":
+            return {'message': 'Cannot delete a request that is already processed'}, 400
+
+        try:
+            db.session.delete(request)
+            db.session.commit()
+            return {'message': 'Service request deleted successfully'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'message': f'Error deleting request: {str(e)}'}, 500
+        
+api.add_resource(ServiceRequestAPI, '/service_requests', '/service_requests/<int:request_id>')
+
     
 class UpdateServiceRequestStatusAPI(Resource):
     @auth_required('token')
@@ -376,7 +405,6 @@ class UpdateServiceRequestStatusAPI(Resource):
 api.add_resource(UpdateServiceRequestStatusAPI, '/update_request_status')
 
 
-api.add_resource(ServiceRequestAPI, '/service_requests')
 
 
 # professional rating api
@@ -423,3 +451,132 @@ class RateProfessionalAPI(Resource):
 
 api.add_resource(RateProfessionalAPI, '/rate_professional/<int:professional_id>')
 
+# summary API for user and professional
+
+class ProfessionalSummaryAPI(Resource):
+    @auth_required('token')
+    def get(self):
+        user_role = current_user.roles[0].name
+
+        response_data = {
+            "total_requests": 0,
+            "status_counts": {"pending": 0, "closed": 0, "rejected": 0, "accepted": 0, "completed": 0},
+        }
+
+        # Fetch service requests based on user role
+        if user_role == "service_professional":
+            service_requests = ServiceRequest.query.filter_by(professional_id=current_user.id).all()
+            
+            # Additional fields for service professionals
+            response_data["average_rating"] = 0
+            response_data["rating_counts"] = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        elif user_role == "user":
+            service_requests = ServiceRequest.query.filter_by(user_id=current_user.id).all()
+        else:
+            return {"message": "Unauthorized"}, 403
+
+        if not service_requests:
+            return response_data, 200
+
+        total_rating = 0
+        rated_services = 0
+
+        for request in service_requests:
+            response_data["status_counts"][request.service_status] = response_data["status_counts"].get(request.service_status, 0) + 1
+            
+            if user_role == "service_professional" and request.service_rating:
+                total_rating += request.service_rating
+                rated_services += 1
+                response_data["rating_counts"][request.service_rating] += 1
+
+        response_data["total_requests"] = len(service_requests)
+
+        if user_role == "service_professional":
+            response_data["average_rating"] = round(total_rating / rated_services, 2) if rated_services > 0 else 0
+
+        return response_data, 200
+
+api.add_resource(ProfessionalSummaryAPI, '/professional_summary')
+
+# summary api for admin
+
+class AdminSummaryAPI(Resource):
+    @auth_required("token")
+    def get(self):
+        # Check if the current user has the "admin" role
+        user_role = current_user.roles[0].name
+        if user_role!='admin':
+            return {"message": "Unauthorized"}, 403
+
+        response_data = {
+            "total_professionals": 0,
+            "total_users": 0,
+            "total_requests": 0,
+            "status_counts": {"pending": 0, "accepted": 0, "completed": 0, "rejected": 0, "closed": 0,},
+            "professional_avg_ratings": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+            "professionals_per_service": {},
+            "requests_per_service": {}
+        }
+
+        # Get role IDs for service professionals and users
+        professional_role = Role.query.filter_by(name="service_professional").first()
+        user_role = Role.query.filter_by(name="user").first()
+
+        # Count professionals and users
+        if professional_role:
+            response_data["total_professionals"] = (
+                User.query.join(UserRoles)
+                .filter(UserRoles.role_id == professional_role.id, User.accepted == True)
+                .count()
+            )
+            if user_role:
+                response_data["total_users"] = User.query.join(UserRoles).filter(UserRoles.role_id == user_role.id).count()
+
+        # Total service requests
+        response_data["total_requests"] = ServiceRequest.query.count()
+
+        # Count of service requests by status
+        status_counts = (
+            db.session.query(ServiceRequest.service_status, func.count(ServiceRequest.id))
+            .group_by(ServiceRequest.service_status)
+            .all()
+        )
+        for status, count in status_counts:
+            response_data["status_counts"][status] = count
+
+        # Average ratings of professionals
+        rating_counts = (
+            db.session.query(User.rating, func.count(User.id))
+            .join(UserRoles)
+            .filter(UserRoles.role_id == professional_role.id, User.rating.isnot(None))
+            .group_by(User.rating)
+            .all()
+        )
+        for rating, count in rating_counts:
+            response_data["professional_avg_ratings"][int(rating)] = count
+        
+        professionals_per_service = (
+            db.session.query(User.service_type, func.count(User.id))
+            .filter(User.service_type.isnot(None), User.accepted == True)
+            .group_by(User.service_type)
+            .all()
+        )
+        for service_type, count in professionals_per_service:
+            response_data["professionals_per_service"][service_type] = count
+
+        # Number of service requests per service
+        requests_per_service = (
+            db.session.query(Service.name, func.count(ServiceRequest.id))
+            .join(ServiceRequest, Service.id == ServiceRequest.service_id)
+            .filter(ServiceRequest.service_status.in_(['accepted', 'completed', 'closed']))
+            .group_by(Service.name)
+            .all()
+        )
+        for service_name, count in requests_per_service:
+            response_data["requests_per_service"][service_name] = count
+
+        return response_data, 200
+
+# Registering the API resource
+api.add_resource(AdminSummaryAPI, "/admin_summary")

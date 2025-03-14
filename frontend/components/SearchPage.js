@@ -2,7 +2,6 @@
 export default {
     template: `
 <div>
-    <!-- Search Bar Based on Role -->
     <div class="p-3">
         <input type="text" class="form-control" v-model="searchQuery" 
             :placeholder="$store.state.role === 'admin' 
@@ -12,24 +11,20 @@ export default {
                     : 'Search Service Requests')">
     </div>
 
-    <!-- Admin: Manage Users -->
     <div class="p-4" v-if="$store.state.loggedIn && $store.state.role === 'admin'">
-        <h3>Users:</h3>
-        <div v-if="filteredUsers.length > 0">
-            <div v-for="user in filteredUsers" :key="user.id">
-                <div :class="'user' + user.id" class="user-card">
-                    <div class="btn" style="flex-grow: 1; text-align: left;">
-                        <div class="d-flex gap-2">
-                            <div>
-                                <p class="m-0">User: {{ user.username }}</p>
-                                <p class="m-0">Email: {{ user.email }}</p>
-                            </div>
-                            <button class="btn" 
-                                :class="user.active ? 'btn-outline-danger' : 'btn-outline-success'"
-                                @click="toggleStatus(user)">
-                                {{ user.active ? "Block" : "Unblock" }}
-                            </button>
-                        </div>
+        <h3 class="text-primary mb-3">Users</h3>
+        <div v-if="filteredUsers.length > 0" class="d-flex flex-column gap-3">
+            <div v-for="user in filteredUsers" :key="user.id" class="card shadow-sm border-0 p-3"
+            :style="{
+                backgroundColor: user.active ? '' : '#f8d7da',
+                color: user.active ? '' : '#721c24',
+                cursor: user.active ? 'pointer' : 'not-allowed',
+                border: user.active ? '' : '1px solid #f5c6cb'
+            }">
+                <div class="card-body d-flex align-items-center justify-content-between" >
+                    <div>
+                        <h5 class="text-dark mb-1">{{ user.username }}</h5>
+                        <p class="text-muted m-0"><strong>Email:</strong> {{ user.email }}</p>
                     </div>
                 </div>
             </div>
@@ -37,7 +32,7 @@ export default {
         <p v-else class="text-center text-muted">No Users</p>
     </div>
 
-    <!-- Admin & User: Service Professionals -->
+
     <div class="p-4" v-if="$store.state.loggedIn && ($store.state.role === 'admin' || $store.state.role === 'user')">
         <h3>Service Professionals:</h3>
         <div v-if="filteredProfessionals.length > 0" class="accordion" id="accordionExample">
@@ -65,12 +60,6 @@ export default {
                         <p>Description: {{ professional.description }}</p>
                         <p>Experience: {{ professional.experience }} Years</p>
                         <p>Service Offered: {{ professional.service_type }}</p>
-                        <button v-if="$store.state.role === 'admin'"
-                            class="btn" 
-                            :class="professional.active ? 'btn-outline-danger' : 'btn-outline-success'"
-                            @click="toggleStatus(professional)">
-                            {{ professional.active ? "Block" : "Unblock" }}
-                        </button> 
                     </div>
                 </div>
             </div>
@@ -78,7 +67,6 @@ export default {
         <p v-else class="text-center text-muted">No Service Professionals available</p>
     </div>
 
-    <!-- Service Professional: Service Requests -->
     <div v-if="$store.state.role === 'service_professional'">
         <h3 class="mt-4">Service Requests:</h3>
         <div v-if="filteredServiceReq.length > 0">
@@ -103,6 +91,7 @@ export default {
                                 'text-warning': request.service_status === 'pending',
                                 'text-info': request.service_status === 'accepted',
                                 'text-success': request.service_status === 'completed',
+                                'text-danger': request.service_status === 'rejected' || request.service_status === 'closed'
                             }">
                                 {{ request.service_status }}
                             </span>
@@ -128,9 +117,12 @@ export default {
     },
     async mounted() {
         try {
-          const [resServices, resProfessionals, resRequests] = await Promise.all([
+          const [resServices,resUsers, resProfessionals, resRequests] = await Promise.all([
             fetch(location.origin + "/api/services", {
               headers: { "Authentication-Token": this.$store.state.auth_token },
+            }),
+            fetch(location.origin + "/api/users", {
+                headers: { "Authentication-Token": this.$store.state.auth_token },
             }),
             fetch(location.origin + "/api/professionals", {
               headers: { "Authentication-Token": this.$store.state.auth_token },
@@ -139,7 +131,7 @@ export default {
               headers: { "Authentication-Token": this.$store.state.auth_token },
             }),
           ]);
-          
+          this.users= await resUsers.json()
           this.services = await resServices.json();
           this.professionals = (await resProfessionals.json()).filter((p) => p.accepted);
           const requestData = await resRequests.json();
@@ -172,7 +164,6 @@ export default {
                     (professional.username?.trim().toLowerCase().includes(query) || "") ||
                     (professional.email?.trim().toLowerCase().includes(query) || "") ||
                     (professional.name?.trim().toLowerCase().includes(query) || "") ||
-                    (professional.service_type?.trim().toLowerCase().includes(query) || "") ||
                     (professional.service_type?.trim().toLowerCase().includes(query) || "")
                 );
             },

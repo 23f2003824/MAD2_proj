@@ -22,6 +22,8 @@ export default {
       </div>
 
       <button class="btn btn-primary w-100" @click="submitLogin">Login</button>
+      <div v-if="errorMessage" class="alert alert-danger text-center mt-4">{{ errorMessage }}</div>
+
       <p class="text-center mt-3">
         New user? 
         <router-link 
@@ -38,6 +40,7 @@ export default {
     return {
       email: null,
       password: null,
+      errorMessage: null,
     };
   },
   methods: {
@@ -47,9 +50,13 @@ export default {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: this.email, password: this.password }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        this.errorMessage = data.message; 
+        return;
+      }
       if (res.ok) {
         console.log("login success");
-        const data = await res.json();
         console.log(data);
         localStorage.setItem('user', JSON.stringify(data));
         console.log(data.role);
